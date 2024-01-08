@@ -1,7 +1,7 @@
 FROM python:3.10-alpine
 
-LABEL name="webhook"
-LABEL url="https://github.com/gabfl/webhook"
+LABEL name="webhook-min"
+LABEL url="https://github.com/vinaayakha/webhook-main"
 
 ENV GUNICORN_WORKERS=4
 ENV GUNICORN_PORT=5000
