@@ -1,0 +1,44 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10']
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Setup timezone
+        uses: zcong1993/setup-timezone@master
+        with:
+          timezone: EST
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          pip install -U pip
+          pip install pycodestyle coverage pytest
+          pip install -r requirements.txt
+      - name: Run pycodestyle
+        run: |
+          pycodestyle --exclude=venv --ignore=E501 .
+      - name: Run pytest
+        run: |
+          coverage run --source=. -m pytest
+      - name: Generate coverage report
+        run: |
+          coverage report -m
+      - name: Upload coverage reports to Codecov
+        run: |
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -t ${CODECOV_TOKEN}

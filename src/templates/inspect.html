@@ -1,0 +1,153 @@
+{% include "header.html" %}
+
+<div class="input-group mb-3" style="margin-top: 6px;">
+    <div class="input-group-prepend">
+        <span class="input-group-text" id="inputGroup-sizing-default">Current route</span>
+    </div>
+    <input type="text" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default" value="{{ host_url }}{{ route_path }}">
+</div>
+
+<form method="POST" action="/inspect/{{ route_path }}">
+    <div class="input-group mb-3">
+        <input type="text" name="set_name" class="form-control" placeholder="{{ name_default }}" value="{{ name }}" aria-label="Webhook name" aria-describedby="button-addon2" maxlength="255">
+        <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Rename</button>
+        </div>
+    </div>
+</form>
+
+{% if callbacks %}
+    <div class="alert alert-primary" role="alert">
+            Webhook example:
+
+            <pre><code>
+curl -X POST {{ host_url }}{{ route_path }} \
+-H "Content-Type: application/json" \
+-H "X-MyHeader: 123" \
+-d '{"hello": "world", "is_true": true}'
+</code></pre>
+        </div>
+        
+    {% for callback in callbacks %}
+        {% set rowloop = loop %}
+
+        <div class="border border table-responsive" style="padding: 6px; margin-bottom: 4px;">
+            <h5>{{ callback.date | strftime }}</h5>
+
+            <div style="text-align: right;">
+                <a href="/api/delete/{{ route_path }}/{{ callback.id }}" target="_blank" onclick="return confirm('Confirm callback deletion?');"><button type="button" class="btn btn-danger btn-secondary btn-sm">Delete (Json)</button></a>
+            </div>
+
+            <table class="table table-sm" style="margin-top: 6px;">
+                <tbody>
+                        <tr>
+                            <td>Method</td>
+                            <td>{{ callback.method }}</td>
+                        </tr>
+                        <tr>
+                            <td>Date</td>
+                            <td>{{ callback.date | strftime }}</td>
+                        </tr>
+                        {% if callback.referrer %}
+                            <tr>
+                                <td>Referrer</td>
+                                <td><a href="{{ callback.referrer }}" target="_blank">{{ callback.referrer }}</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if callback.remote_addr %}
+                            <tr>
+                                <td>IP</td>
+                                <td>{{ callback.remote_addr }}</td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td>Headers</td>
+                            <td>
+                                <table class="table table-striped table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for key in callback.headers %}
+                                        <tr>
+                                            <td>{{ key }}</td>
+                                            <td>{{ callback.headers[key] }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        {% if callback.args %}
+                        <tr>
+                            <td>Arguments</td>
+                            <td>
+                                <table class="table table-striped table-sm">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">Key</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for key in callback.args %}
+                                        <tr>
+                                            <td>{{ key }}</td>
+                                            <td>{{ callback.args[key] }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td>Body</td>
+                            <td>
+                                {% if callback.body['data'] %}
+                                    <textarea id="body-{{  rowloop.index }}" style="height: 240px; width: 80%;">{{ callback.body['data'] }}</textarea>
+                                    <!-- <pre><code id="body-{{  rowloop.index }}">{{ callback.body['data'] }}</code></pre> -->
+                                {% else %}
+                                    <span style="font-style: italic;">empty!</span>
+                                {% endif %}
+                                </td>
+                        </tr>
+                        <tr>
+                            <td>Body size</td>
+                            <td><pre><code>{{ callback.body['size'] }}</code></pre></td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {% if callback.body['data'] and callback.body['data'] is mapping %}
+            <script>
+                var obj = {{ callback.body['data'] | tojson }};
+                var myJSON = JSON.stringify(obj, null, 2);
+
+                document.getElementById("body-{{  rowloop.index }}").innerHTML = myJSON;
+            </script>
+        {% endif %}
+    {% endfor %}
+
+    {% if cursor %}
+        <a href="?cursor={{ cursor }}">Previous results</a>
+    {% endif %}
+{% else %}
+    <div class="alert alert-primary" role="alert">
+        No callbacks yet!<br />
+        Try a payload and refresh this page:
+
+        <pre><code>
+curl -X POST {{ host_url }}{{ route_path }} \
+-H "Content-Type: application/json" \
+-H "X-MyHeader: 123" \
+-d '{"hello": "world", "is_true": true}'
+</code></pre>
+    </div>
+{% endif %}
+
+{% include "footer.html" %}
